@@ -1,4 +1,10 @@
+import { useState } from 'react'
+import Dropzone from './components/Dropzone'
+import type { ParseOk } from './lib/parsers'
+
 export default function App() {
+  const [, setResume] = useState<ParseOk | null>(null)
+
   return (
     <>
       <header className="header">
@@ -9,7 +15,9 @@ export default function App() {
           </p>
         </div>
       </header>
-      <main className="container"></main>
+      <main className="container">
+        <Dropzone onAccepted={setResume} onCleared={() => setResume(null)} />
+      </main>
     </>
   )
 }

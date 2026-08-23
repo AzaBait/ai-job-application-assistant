@@ -45,3 +45,6 @@ coverage/
 # Python
 __pycache__/
 *.py[cod]
+
+# Generated pdfjs wasm copies
+client/public/pdfjs/

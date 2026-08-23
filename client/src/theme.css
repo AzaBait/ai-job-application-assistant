@@ -55,3 +55,71 @@ h1 {
   font-size: 0.875rem;
   color: var(--color-text-muted);
 }
+
+.dropzone {
+  width: 100%;
+  min-height: 44px;
+  padding: calc(8 * var(--space-unit));
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  font: inherit;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible,
+.dropzone-dragover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.dropzone-dragover {
+  border-style: solid;
+}
+
+.dropzone-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(2 * var(--space-unit));
+  padding: calc(3 * var(--space-unit)) calc(4 * var(--space-unit));
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+}
+
+.dropzone-clear {
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: calc(2 * var(--space-unit));
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.dropzone-clear:hover,
+.dropzone-clear:focus-visible {
+  color: var(--color-error);
+}
+
+.dropzone-error {
+  margin: calc(2 * var(--space-unit)) 0 0;
+  color: var(--color-error);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -3,7 +3,7 @@ title: 'Story 1.2: Загрузка резюме и извлечение тек�
 type: 'feature'
 created: '2026-08-23'
 baseline_commit: 'e2bc613509c86cfbeff51683779883077a3a1d5c'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 context:
   - "{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md"
@@ -67,12 +67,12 @@ client/src/lib/parsers/docx.ts       # mammoth extractRawText({ arrayBuffer })
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `client/src/lib/parsers/pdf.ts` -- pdfjs-dist v6: worker через `pdfjs-dist/build/pdf.worker.min.mjs?url`, `GlobalWorkerOptions.workerSrc`, перебор страниц → объединённый текст -- ядро истории
-- [ ] `client/src/lib/parsers/docx.ts` -- mammoth `extractRawText` из ArrayBuffer -- второй формат
-- [ ] `client/src/lib/parsers/index.ts` -- чтение первых байт (magic-byte), проверка размера, dispatch формата; возвращает `{ text, fileName }` или код отказа -- единая точка входа парсинга
-- [ ] `client/src/components/Dropzone.tsx` -- dragover/click/keyboard, отображение имени/размера, кнопка ×, минимальные inline-отклонения -- UX точки входа
-- [ ] `client/src/App.tsx` -- состояние `{ fileName, sizeBytes, sourceKind }`, интеграция Dropzone -- связка в страницу
-- [ ] smoke-проверка сборки с worker-ассетом pdfjs в `dist/` -- регрессия билда
+- [x] `client/src/lib/parsers/pdf.ts` -- pdfjs-dist v6: worker через `pdfjs-dist/build/pdf.worker.min.mjs?url`, `GlobalWorkerOptions.workerSrc`, перебор страниц → объединённый текст -- ядро истории
+- [x] `client/src/lib/parsers/docx.ts` -- mammoth `extractRawText` из ArrayBuffer -- второй формат
+- [x] `client/src/lib/parsers/index.ts` -- чтение первых байт (magic-byte), проверка размера, dispatch формата; возвращает `{ text, fileName }` или код отказа -- единая точка входа парсинга
+- [x] `client/src/components/Dropzone.tsx` -- dragover/click/keyboard, отображение имени/размера, кнопка ×, минимальные inline-отклонения -- UX точки входа
+- [x] `client/src/App.tsx` -- состояние `{ fileName, sizeBytes, sourceKind }`, интеграция Dropzone -- связка в страницу
+[x] smoke-проверка сборки с worker-ассетом pdfjs в `dist/` -- регрессия билда
 
 **Acceptance Criteria:**
 - Given валидный текстовый PDF ≤5 МБ, when выбираю его в dropzone, then показываются имя и размер, текст извлечён в память вкладки, сетевых запросов с телом файла нет
@@ -105,3 +105,32 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 **Manual checks (if no CLI):**
 - DevTools Network: при загрузке файла нет запросов к серверу с его содержимым
 - Клавиатура: Tab до dropzone → Enter открывает диалог выбора файла
+
+## Suggested Review Order
+
+**Парсинг: единая точка входа**
+
+- Magic-byte dispatch + лимит размера до парсинга; коды отказа из закрытого реестра
+  [`index.ts:18`](../../client/src/lib/parsers/index.ts#L18)
+
+- PDF: worker через ?url + hasEOL-сохранение строк, destroy в finally
+  [`pdf.ts:10`](../../client/src/lib/parsers/pdf.ts#L10)
+
+- DOCX: mammoth extractRawText, warnings в console.warn
+  [`docx.ts:3`](../../client/src/lib/parsers/docx.ts#L3)
+
+**Dropzone: interaction и robustness**
+
+- try/catch → PARSE_FAILED; seq-guard гонок; pending-состояние чтения
+  [`Dropzone.tsx:27`](../../client/src/components/Dropzone.tsx#L27)
+
+- Drag-флик guard + window preventDefault + aria-live объявления
+  [`Dropzone.tsx:74`](../../client/src/components/Dropzone.tsx#L74)
+
+**Периферия**
+
+- Реестр кодов: PARSE_FAILED добавлен по AD-7
+  [`index.ts:1`](../../shared/src/index.ts#L1)
+
+- Персистентный harness парсеров: 5 кейсов + post-build проверки
+  [`check-parsers.mjs:6`](../../scripts/check-parsers.mjs#L6)
