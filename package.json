@@ -15,7 +15,7 @@
     "build": "npm run typecheck && npm run build -w client",
     "typecheck": "tsc --noEmit -p client && tsc --noEmit -p server",
     "start": "node --env-file-if-exists=.env server/src/index.ts",
-    "test": "npm run build && node scripts/test.mjs && node scripts/check-parsers.mjs && node scripts/check-form.mjs && node scripts/check-generate.mjs && node scripts/check-results.mjs"
+    "test": "npm run build && node scripts/test.mjs && node scripts/check-parsers.mjs && node scripts/check-form.mjs && node scripts/check-generate.mjs && node scripts/check-results.mjs && node scripts/check-export.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

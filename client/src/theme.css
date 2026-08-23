@@ -340,3 +340,32 @@ h1 {
 .document-card-toggle:focus-visible {
   border-color: var(--color-accent);
 }
+
+.document-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(2 * var(--space-unit));
+  margin-top: calc(3 * var(--space-unit));
+}
+
+.btn-secondary-outline {
+  min-height: 44px;
+  padding: calc(2 * var(--space-unit)) calc(4 * var(--space-unit));
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  background: none;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.btn-secondary-outline:hover,
+.btn-secondary-outline:focus-visible {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.document-card-error {
+  margin: calc(2 * var(--space-unit)) 0 0;
+  font-size: 0.875rem;
+  color: var(--color-error);
+}

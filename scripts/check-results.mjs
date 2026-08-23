@@ -156,24 +156,37 @@ try {
   {
     const render = (text) => renderToString(h(DocumentCard, { title: 'Тест', text }))
     const short = render(['строка 1', 'строка 2'].join('\n'))
-    assert.ok(!short.includes('<button'), 'CARD short: no toggle button for short text')
+    assert.ok(!short.includes('document-card-toggle'), 'CARD short: no preview-toggle for short text')
     assert.ok(short.includes('Тест') && short.includes('строка 1'))
 
     const crlfDoc = Array.from({ length: 10 }, (_, i) => `line ${i + 1}`).join('\r\n')
     const crlfHtml = render(crlfDoc)
     assert.ok(crlfHtml.includes('aria-expanded="false"'), 'CARD crlf: default collapsed state marked')
-    assert.ok(crlfHtml.includes('<button'), 'CARD crlf: toggle present for 10 lines')
+    assert.ok(crlfHtml.includes('document-card-toggle'), 'CARD crlf: preview-toggle present for 10 lines')
     assert.ok(crlfHtml.includes('line 1') && !crlfHtml.includes('line 10</p>'), 'CARD crlf: preview shows head, not tail')
 
     const longPara = render('б'.repeat(700))
-    assert.ok(longPara.includes('<button'), 'CARD long paragraph: toggle present (>600 chars)')
+    assert.ok(longPara.includes('document-card-toggle'), 'CARD long paragraph: preview-toggle present (>600 chars)')
     assert.ok(longPara.includes('…'), 'CARD long paragraph: preview truncated with ellipsis')
 
     const wsTailDoc = `${Array.from({ length: 8 }, (_, i) => `x${i}`).join('\n')}\n  \n`
-    assert.ok(!render(wsTailDoc).includes('<button'), 'CARD ws-tail: whitespace-only remainder hides toggle')
+    assert.ok(!render(wsTailDoc).includes('document-card-toggle'), 'CARD ws-tail: whitespace-only remainder hides preview-toggle')
 
-    assert.ok(!render('').includes('<button'), 'CARD empty: no toggle on empty document')
+    assert.ok(!render('').includes('document-card-toggle'), 'CARD empty: no toggle on empty document')
     console.log('CARD: схлопнуто по умолчанию; кнопка для 10 строк/длинного абзаца; нет кнопки на пробельном хвосте')
+  }
+
+  // DOCUMENT CARD Story 1.6: download buttons on every card (Story 1.5 cards)
+  {
+    const { renderToString } = await import('react-dom/server')
+    const html = renderToString(
+      h(DocumentCard, { title: 'Тест', text: 'строка', fileBase: 'resume-tailored' }),
+    )
+    for (const label of ['Скачать PDF', 'Скачать DOCX']) {
+      assert.ok(html.includes(label), `CARD 1.6: button «${label}» present`)
+    }
+    assert.ok(html.includes('btn-secondary-outline'), 'CARD 1.6: secondary outline styling hook')
+    console.log('CARD 1.6: обе кнопки скачивания присутствуют на карточке')
   }
 
   console.log('results checks passed')

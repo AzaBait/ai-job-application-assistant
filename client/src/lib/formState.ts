@@ -86,3 +86,39 @@ export function documentExpandable(text: string): boolean {
   // whitespace-only remainder beyond the preview is not worth a toggle
   return lines.slice(PREVIEW_LINES).join('\n').trim().length > 0
 }
+
+// markdown-lite parser for the LLM output contract from Story 1.4's prompt:
+// '# '/'## ' headings, '- ' list items, '---' separator. Consecutive plain
+// lines merge into ONE paragraph (blank line starts a new paragraph).
+// Tolerant by design: any unrecognized line is a plain paragraph.
+export type DocBlock =
+  | { type: 'h1' | 'h2' | 'p' | 'li'; text: string }
+  | { type: 'hr' }
+
+export function parseDocumentStructure(text: string): DocBlock[] {
+  const blocks: DocBlock[] = []
+  let canMerge = false
+  for (const raw of splitLines(text)) {
+    const line = raw.trim()
+    if (!line) {
+      canMerge = false
+      continue
+    }
+    const last = blocks[blocks.length - 1]
+    if (/^-{3,}$/.test(line)) {
+      blocks.push({ type: 'hr' })
+    } else if (line.startsWith('## ')) {
+      blocks.push({ type: 'h2', text: line.slice(3).trim() })
+    } else if (line.startsWith('# ')) {
+      blocks.push({ type: 'h1', text: line.slice(2).trim() })
+    } else if (/^[-•]\s+/.test(line)) {
+      blocks.push({ type: 'li', text: line.replace(/^[-•]\s+/, '') })
+    } else if (canMerge && last?.type === 'p') {
+      last.text += `\n${line}`
+    } else {
+      blocks.push({ type: 'p', text: line })
+    }
+    canMerge = blocks[blocks.length - 1]?.type === 'p'
+  }
+  return blocks
+}

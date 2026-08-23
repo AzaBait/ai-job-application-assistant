@@ -156,8 +156,8 @@ export default function App() {
             <p className="trust-line">
               Мы не добавляем факты, которых нет в вашем резюме
             </p>
-            <DocumentCard title="Адаптированное резюме" text={result.adaptedResume} />
-            <DocumentCard title="Сопроводительное письмо" text={result.coverLetter} />
+            <DocumentCard title="Адаптированное резюме" text={result.adaptedResume} fileBase="resume-tailored" />
+            <DocumentCard title="Сопроводительное письмо" text={result.coverLetter} fileBase="cover-letter" />
           </section>
         )}
       </main>

@@ -3,7 +3,7 @@ title: 'Story 1.6: Скачивание PDF и DOCX'
 type: 'feature'
 created: '2026-08-23'
 baseline_commit: '340f4f4c22895c50b162f9b3d151abfbece18557'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 context:
   - "{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md"
@@ -28,6 +28,7 @@ context:
 
 **Ask First:**
 - Любой новый dependency сверх `docx`, `pdf-lib` (разрешены спайном).
+- УТВЕРЖДЕНО владельцем продукта 2026-08-23: `@pdf-lib/fontkit` разрешён — технически неизбежен для embedFont кастомного TTF (официальное требование pdf-lib), без него кириллица в PDF невыполнима.
 
 **Never:**
 - Никакого участия сервера в экспорте (AD-4)
@@ -68,12 +69,12 @@ client/src/lib/exporters/index.ts   # downloadDocument(kind, fileName) -> Blob -
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `client/src/lib/formState.ts` -- парсер лёгкой разметки результата LLM (#/## заголовки, `-` списки, пустая строка = абзац, --- разделитель) в структуру `{type, text}[]` -- единый источник для docx/pdf
-- [ ] `client/src/lib/exporters/docx.ts` -- структура -> Document с HeadingLevel/Paragraph/bullet, Packer.toBlob -- DOCX-ветка
-- [ ] `client/src/lib/exporters/pdf.ts` -- структура -> PDFDocument + embedFont(NotoSans), перенос страниц по высоте, winAnsi-safe текст через glyph check -- PDF-ветка
-- [ ] `client/src/lib/exporters/index.ts` -- trigger download через URL.createObjectURL + `<a download>` -- доставка файла
-- [ ] `DocumentCard.tsx` -- две кнопки «Скачать PDF»/«Download DOCX», inline-error при неудаче, retry повторным кликом -- UX точки выхода
-- [ ] Расширение harness (`scripts/check-export.mjs`) -- парсер структуры + генерация обоих форматов на фикстуре с кириллицей/списками/заголовками; assert непустых blob'ов и наличия встроенного шрифта в PDF -- повторяемая проверка
+[x] `client/src/lib/formState.ts` -- парсер лёгкой разметки результата LLM (#/## заголовки, `-` списки, пустая строка = абзац, --- разделитель) в структуру `{type, text}[]` -- единый источник для docx/pdf
+[x] `client/src/lib/exporters/docx.ts` -- структура -> Document с HeadingLevel/Paragraph/bullet, Packer.toBlob -- DOCX-ветка
+[x] `client/src/lib/exporters/pdf.ts` -- структура -> PDFDocument + embedFont(NotoSans), перенос страниц по высоте, winAnsi-safe текст через glyph check -- PDF-ветка
+[x] `client/src/lib/exporters/index.ts` -- trigger download через URL.createObjectURL + `<a download>` -- доставка файла
+[x] `DocumentCard.tsx` -- две кнопки «Скачать PDF»/«Download DOCX», inline-error при неудаче, retry повторным кликом -- UX точки выхода
+[x] Расширение harness (`scripts/check-export.mjs`) -- парсер структуры + генерация обоих форматов на фикстуре с кириллицей/списками/заголовками; assert непустых blob'ов и наличия встроенного шрифта в PDF -- повторяемая проверка
 
 **Acceptance Criteria:**
 - Given результат, when жму «Скачать DOCX», then скачивается .docx с заголовками/списками/абзацами
@@ -99,3 +100,29 @@ pdf-lib WinAnsi не покрывает кириллицу -- единствен
 
 **Manual checks (if no CLI):**
 - Открыть скачанные файлы: кириллица читаема, структура видна
+
+## Suggested Review Order
+
+**Парсер структуры (единый источник)**
+
+- parseDocumentStructure: заголовки/списки/hr, склейка абзацев
+  [`formState.ts:300`](../../client/src/lib/formState.ts#L300)
+
+**Экспортёры**
+
+- PDF: NotoSans embed через fontkit, перенос страниц, fallback+retry шрифта
+  [`pdf.ts:20`](../../client/src/lib/exporters/pdf.ts#L20)
+
+- DOCX: HeadingLevel/bullet → Packer.toBlob
+  [`docx.ts:5`](../../client/src/lib/exporters/docx.ts#L5)
+
+- Доставка: Blob → a[download], отложенный revoke
+  [`index.ts:7`](../../client/src/lib/exporters/index.ts#L7)
+
+**UI и harness**
+
+- DocumentCard: busy-state, error по kind, retry
+  [`DocumentCard.tsx:19`](../../client/src/components/DocumentCard.tsx#L19)
+
+- Harness: round-trip кириллицы через pdfjs, delivery-shim
+  [`check-export.mjs:1`](../../scripts/check-export.mjs#L1)
