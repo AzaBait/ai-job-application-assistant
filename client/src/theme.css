@@ -112,6 +112,108 @@ h1 {
   color: var(--color-error);
 }
 
+.input-zone {
+  display: flex;
+  flex-direction: column;
+  gap: calc(6 * var(--space-unit));
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: calc(1 * var(--space-unit));
+}
+
+.vacancy-textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: calc(3 * var(--space-unit));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  font: inherit;
+  color: var(--color-text);
+  resize: vertical;
+}
+
+.vacancy-textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.vacancy-counter {
+  text-align: right;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.vacancy-counter-error {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.segmented {
+  display: flex;
+  width: fit-content;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  overflow: hidden;
+}
+
+.segmented-option {
+  padding: calc(3 * var(--space-unit)) calc(5 * var(--space-unit));
+  min-height: 44px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.segmented-option + .segmented-option {
+  border-left: 1px solid var(--color-border);
+}
+
+.segmented-option-active {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+.segmented-option:not(.segmented-option-active):hover,
+.segmented-option:not(.segmented-option-active):focus-visible {
+  background: var(--color-surface);
+  color: var(--color-accent);
+}
+
+.tone-description {
+  margin: calc(1 * var(--space-unit)) 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.generate-button {
+  padding: calc(3 * var(--space-unit)) calc(8 * var(--space-unit));
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--color-accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.generate-button:disabled {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.generate-hint {
+  margin: calc(1 * var(--space-unit)) 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

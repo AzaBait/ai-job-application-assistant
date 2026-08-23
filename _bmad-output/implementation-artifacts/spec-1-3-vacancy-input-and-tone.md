@@ -3,7 +3,7 @@ title: 'Story 1.3: Текст вакансии и выбор тональнос�
 type: 'feature'
 created: '2026-08-23'
 baseline_commit: '83ccf6e7d96c0cfd4a64dec6b562ef8ca1c49399'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 context:
   - "{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md"
@@ -69,12 +69,12 @@ client/src/components/GenerateButton.tsx # disabled-логика + подска�
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `shared/src/index.ts` -- `countChars` (codepoints), `MIN_VACANCY_CHARS`, enum `Tone = 'professional' | 'friendly' | 'confident'` -- единый источник контрактов
-- [ ] `client/src/components/VacancyInput.tsx` -- textarea, счётчик n/10 000, обрезка ввода на лимите, `{colors.error}` при переполнении -- FR-3
-- [ ] `client/src/components/ToneSelect.tsx` -- segmented control, дефолт professional, строка описания -- FR-6
-- [ ] `client/src/components/GenerateButton.tsx` -- disabled-логика по трём условиям + конкретные подсказки -- UX-DR5
-- [ ] `client/src/App.tsx` -- сборка Зоны 1, фокус-handoff Dropzone→textarea через ref -- связка
-- [ ] `scripts/check-form.mjs` (или расширение harness) -- кейсы матрицы I/O против чистых функций состояния -- повторяемая проверка
+[x] `shared/src/index.ts` -- `countChars` (codepoints), `MIN_VACANCY_CHARS`, enum `Tone = 'professional' | 'friendly' | 'confident'` -- единый источник контрактов
+[x] `client/src/components/VacancyInput.tsx` -- textarea, счётчик n/10 000, обрезка ввода на лимите, `{colors.error}` при переполнении -- FR-3
+[x] `client/src/components/ToneSelect.tsx` -- segmented control, дефолт professional, строка описания -- FR-6
+[x] `client/src/components/GenerateButton.tsx` -- disabled-логика по трём условиям + конкретные подсказки -- UX-DR5
+[x] `client/src/App.tsx` -- сборка Зоны 1, фокус-handoff Dropzone→textarea через ref -- связка
+[x] `scripts/check-form.mjs` (или расширение harness) -- кейсы матрицы I/O против чистых функций состояния -- повторяемая проверка
 
 **Acceptance Criteria:**
 - Given файл загружен и вакансия ≥200 codepoints, when смотрю на кнопку, then она активна
@@ -102,3 +102,32 @@ Codepoints без Intl.Segmenter (достаточно для лимита): `[.
 **Manual checks (if no CLI):**
 - Клавиатура: загрузить файл → фокус в textarea; Tab-порядок dropzone → textarea → tone → button
 - Эмодзи в тексте считается одной единицей
+
+## Suggested Review Order
+
+**Чистая логика формы**
+
+- formIssue: trim-check, приоритет отказов; TONE_OPTIONS/toneDescription — единственный source
+  [`formState.ts:6`](../../client/src/lib/formState.ts#L6)
+
+- countChars + MIN_VACANCY_CHARS — codepoints, не UTF-16
+  [`index.ts:8`](../../shared/src/index.ts#L8)
+
+**Компоненты зоны ввода**
+
+- VacancyInput: обрезка на лимите, красный счётчик, отказ от native maxLength (комментарий)
+  [`VacancyInput.tsx:9`](../../client/src/components/VacancyInput.tsx#L9)
+
+- ToneSelect на общих TONE_OPTIONS
+  [`ToneSelect.tsx:12`](../../client/src/components/ToneSelect.tsx#L12)
+
+- GenerateButton: disabled-подсказки + aria-live, onClick отложен в 1.4
+  [`GenerateButton.tsx:20`](../../client/src/components/GenerateButton.tsx#L20)
+
+**Связка и проверки**
+
+- Фокус-handoff accept→textarea, clear→dropzone
+  [`App.tsx:31`](../../client/src/App.tsx#L31)
+
+- Harness: границы 10 000/10 001, whitespace-only, tone-mapping
+  [`check-form.mjs:40`](../../scripts/check-form.mjs#L40)
