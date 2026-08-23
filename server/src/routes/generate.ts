@@ -67,11 +67,34 @@ generateRoute.post('/api/generate', async (c) => {
           },
         }
         break
-      default:
+      default: {
+        // AD-7 diagnostics: never log raw provider bodies. Log HTTP status +
+        // only the provider's error.code/error.message fields (parsed from the
+        // JSON error body when possible), truncated; API key redacted when set.
+        const httpMatch = /^HTTP (\d+): ?([\s\S]*)$/.exec(outcome.message)
+        let detail = httpMatch ? httpMatch[2] : outcome.message
+        try {
+          const parsed: unknown = JSON.parse(detail)
+          const pe = (parsed as { error?: { code?: unknown; message?: unknown } }).error
+          const fields = [pe?.code, pe?.message].filter((v) => typeof v === 'string')
+          if (fields.length > 0) detail = fields.join(': ')
+        } catch {}
+        const apiKey = process.env.GEMINI_API_KEY
+        if (apiKey) detail = detail.replaceAll(apiKey, '[REDACTED]')
+        console.log(
+          JSON.stringify({
+            route: 'POST /api/generate',
+            diag: {
+              status: httpMatch ? Number(httpMatch[1]) : undefined,
+              detail: [...detail].slice(0, 200).join(''),
+            },
+          }),
+        )
         payload = {
           ok: false,
           error: { code: 'LLM_UNAVAILABLE', message: 'Провайдер недоступен, попробуйте позже' },
         }
+      }
     }
     console.log(
       JSON.stringify({

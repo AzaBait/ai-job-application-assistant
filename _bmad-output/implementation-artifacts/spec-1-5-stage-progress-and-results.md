@@ -3,7 +3,7 @@ title: 'Story 1.5: Стадии процесса и просмотр резул�
 type: 'feature'
 created: '2026-08-23'
 baseline_commit: '9d1ea96517c5f63a3eeb26c41e76f7c9240e243c'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 context:
   - "{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md"
@@ -69,12 +69,12 @@ client/src/lib/formState.ts               # + чистая функция stageP
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `client/src/components/StageTracker.tsx` -- 3 стадии с индикаторами ✓/●(CSS-спиннер)/○, `aria-live="polite"`, текст стадии дублирует спиннер -- FR-9
-- [ ] Прогрессия стадий в App -- детерминированная: стадии 1–2 завершаются последовательно за фиксированные короткие интервалы, стадия 3 активна до разрешения запроса -- UX-лейблы, не пайплайн
-- [ ] `client/src/components/DocumentCard.tsx` -- заголовок, кнопка разворота превью (первые ~8 строк), полный текст по развороту -- UX-DR7
-- [ ] `App.tsx` -- Зона 3: две cards (Адаптированное резюме / Сопроводительное письмо), trust-line над ними, ref-заголовок Зоны 3 -- структура результатов
-- [ ] Фокус/скролл: старт генерации → автоскролл к трекеру; успех → фокус+скролл на заголовок Зоны 3; сброс при regenerate/error -- управление вниманием
-- [ ] Расширение harness (`scripts/check-results.mjs`) -- чистая логика прогрессии стадий и превью-обрезки против матрицы -- повторяемая проверка
+[x] `client/src/components/StageTracker.tsx` -- 3 стадии с индикаторами ✓/●(CSS-спиннер)/○, `aria-live="polite"`, текст стадии дублирует спиннер -- FR-9
+[x] Прогрессия стадий в App -- детерминированная: стадии 1–2 завершаются последовательно за фиксированные короткие интервалы, стадия 3 активна до разрешения запроса -- UX-лейблы, не пайплайн
+[x] `client/src/components/DocumentCard.tsx` -- заголовок, кнопка разворота превью (первые ~8 строк), полный текст по развороту -- UX-DR7
+[x] `App.tsx` -- Зона 3: две cards (Адаптированное резюме / Сопроводительное письмо), trust-line над ними, ref-заголовок Зоны 3 -- структура результатов
+[x] Фокус/скролл: старт генерации → автоскролл к трекеру; успех → фокус+скролл на заголовок Зоны 3; сброс при regenerate/error -- управление вниманием
+[x] Расширение harness (`scripts/check-results.mjs`) -- чистая логика прогрессии стадий и превью-обрезки против матрицы -- повторяемая проверка
 
 **Acceptance Criteria:**
 - Given нажата «Сгенерировать», when идёт обработка, then трекер показывает последовательное прохождение стадий, активная сопровождается спиннером и текстом, повторный клик невозможен
@@ -101,3 +101,34 @@ client/src/lib/formState.ts               # + чистая функция stageP
 
 **Manual checks (if no CLI):**
 - Скринридер/клавиатура: Tab после успеха попадает на заголовок Зоны 3; aria-live объявляет стадии
+
+## Suggested Review Order
+
+**Чистая логика**
+
+- stageProgress: кумулятивные дедлайны стадий 1–2, стадия 3 до resolve
+  [`formState.ts:180`](../../client/src/lib/formState.ts#L180)
+
+- documentPreview/documentExpandable: \r?\n, кап 600, пробельный хвост
+  [`formState.ts:215`](../../client/src/lib/formState.ts#L215)
+
+**Компоненты**
+
+- StageTracker: ✓/●/○, sr-only aria-live только активная стадия
+  [`StageTracker.tsx:10`](../../client/src/components/StageTracker.tsx#L10)
+
+- DocumentCard: превью 8 строк, aria-expanded toggle
+  [`DocumentCard.tsx:11`](../../client/src/components/DocumentCard.tsx#L11)
+
+**Связка в App**
+
+- useEffect фокуса/скролла (без rAF), busy/genSeq guard'ы, сброс elapsed
+  [`App.tsx:26`](../../client/src/App.tsx#L26)
+
+**Периферия**
+
+- Diag-лог: {status, detail} без тела и PII
+  [`generate.ts:70`](../../server/src/routes/generate.ts#L70)
+
+- SSR harness: tracker/card матрицы
+  [`check-results.mjs:1`](../../scripts/check-results.mjs#L1)
