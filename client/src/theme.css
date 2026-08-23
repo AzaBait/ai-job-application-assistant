@@ -1,0 +1,57 @@
+:root {
+  --color-background: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-border: #dee2e6;
+  --color-text: #212529;
+  --color-text-muted: #6c757d;
+  --color-accent: #2563eb;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --radius-button: 8px;
+  --radius-input: 8px;
+  --radius-card: 12px;
+
+  --page-max-width: 960px;
+  --space-unit: 4px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+.container {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: calc(4 * var(--space-unit));
+}
+
+.header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.trust-line {
+  margin: calc(1 * var(--space-unit)) 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
