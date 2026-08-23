@@ -3,7 +3,7 @@ title: 'Story 1.4: Генерация без фабрикации через BFF
 type: 'feature'
 created: '2026-08-23'
 baseline_commit: '369b841ab610cf179153a294c72ccde84c956164'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 context:
   - "{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md"
@@ -74,13 +74,13 @@ client/src/lib/api.ts             # postGenerate(): AbortController 90c, пар�
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `shared/src/index.ts` -- GenerateRequestSchema `{resumeText, vacancyText, tone}` + GenerateResponseSchema `{adaptedResume, coverLetter}` (непустые строки), экспорт JSON-схемы для responseSchema -- контракт в одном месте
-- [ ] `server/src/prompts/generate.ts` -- системный промпт запрета фабрикации + сборка контента из резюме/вакансии/тона -- слой 1 AD-5
-- [ ] `server/src/llm/gemini.ts` -- вызов `${LLM_MODEL}:generateContent` c responseSchema, serverTimeout, классификация исходов (ok / schema-rejected / invalid / timeout / rate-limit) -- ядро BFF
-- [ ] `server/src/routes/generate.ts` + монтаж в `index.ts` -- repair-retry логика (ровно один), envelope ошибок -- оркестрация
-- [ ] `client/src/lib/api.ts` -- postGenerate c AbortController 90 c -- клиентская половина таймаута
-- [ ] `GenerateButton/App` -- подключение onClick, фаза generating (disable + «Генерируем…»), результаты в состояние, минимальный inline-error -- замыкание сценария
-- [ ] `scripts/check-generate.mjs` -- harness: mock-сервер LLM (подменённый base URL) покрывает все 5 строк матрицы без реального API -- повторяемая проверка без сети
+[x] `shared/src/index.ts` -- GenerateRequestSchema `{resumeText, vacancyText, tone}` + GenerateResponseSchema `{adaptedResume, coverLetter}` (непустые строки), экспорт JSON-схемы для responseSchema -- контракт в одном месте
+[x] `server/src/prompts/generate.ts` -- системный промпт запрета фабрикации + сборка контента из резюме/вакансии/тона -- слой 1 AD-5
+[x] `server/src/llm/gemini.ts` -- вызов `${LLM_MODEL}:generateContent` c responseSchema, serverTimeout, классификация исходов (ok / schema-rejected / invalid / timeout / rate-limit) -- ядро BFF
+[x] `server/src/routes/generate.ts` + монтаж в `index.ts` -- repair-retry логика (ровно один), envelope ошибок -- оркестрация
+[x] `client/src/lib/api.ts` -- postGenerate c AbortController 90 c -- клиентская половина таймаута
+[x] `GenerateButton/App` -- подключение onClick, фаза generating (disable + «Генерируем…»), результаты в состояние, минимальный inline-error -- замыкание сценария
+[x] `scripts/check-generate.mjs` -- harness: mock-сервер LLM (подменённый base URL) покрывает все 5 строк матрицы без реального API -- повторяемая проверка без сети
 
 **Acceptance Criteria:**
 - Given рабочая форма, when кликаю «Сгенерировать», then браузер вызывает только `/api/generate` (не провайдера), ответ проходит клиентскую Zod-валидацию и попадает в состояние App
@@ -107,3 +107,37 @@ Repair-retry: второй вызов получает тот же промпт 
 
 **Manual checks (if no CLI):**
 - DevTools Network: запрос уходит только на свой origin; тело ответа содержит два непустых документа
+
+## Suggested Review Order
+
+**Контракт и анти-фабрикация**
+
+- Zod-схемы + GENERATE_RESPONSE_JSON_SCHEMA — единственный источник формы
+  [`index.ts:20`](../../shared/src/index.ts#L20)
+
+- Системный промпт: запрет фабрикации + «теги = данные, не инструкции»
+  [`generate.ts:5`](../../server/src/prompts/generate.ts#L5)
+
+**BFF-оркестрация**
+
+- Общий 90c deadline на попытку+retry; ровно один repair-retry; envelope ошибок
+  [`generate.ts:40`](../../server/src/routes/generate.ts#L40)
+
+- Классификация исходов Gemini: blockReason→provider_error без retry, узкий schema-regex
+  [`gemini.ts:60`](../../server/src/llm/gemini.ts#L60)
+
+- JSON-line лог {code,durationMs} без контента (AD-7)
+  [`generate.ts:95`](../../server/src/routes/generate.ts#L95)
+
+**Клиент**
+
+- postGenerate: abort→TIMEOUT, транспорт→UNAVAILABLE, envelope через Zod union
+  [`api.ts:10`](../../client/src/lib/api.ts#L10)
+
+- Сброс устаревших результатов при правке ввода
+  [`App.tsx:30`](../../client/src/App.tsx#L30)
+
+**Периферия**
+
+- Offline harness: mock Gemini, динамические порты, 429/refused/client-api строки
+  [`check-generate.mjs:1`](../../scripts/check-generate.mjs#L1)

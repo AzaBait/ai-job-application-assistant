@@ -6,6 +6,7 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "noEmit": true,
     "skipLibCheck": true,

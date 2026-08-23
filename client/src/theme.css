@@ -214,6 +214,12 @@ h1 {
   color: var(--color-text-muted);
 }
 
+.generate-error {
+  margin: calc(1 * var(--space-unit)) 0 0;
+  font-size: 0.875rem;
+  color: var(--color-error);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
