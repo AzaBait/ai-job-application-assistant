@@ -41,3 +41,7 @@ coverage/
 
 # Local AI/tool files
 .opencode/local/
+
+# Python
+__pycache__/
+*.py[cod]
