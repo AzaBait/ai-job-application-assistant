@@ -46,6 +46,42 @@ npm run dev
 адресе, который выведет Vite (по умолчанию http://localhost:5173), `/api`
 проксируется на сервер. Серверная часть читает `server/.env`.
 
+
+## Деплой на Render
+
+Приложение деплоится как Render **Web Service** (Node environment):
+
+1. Push репозитория на GitHub.
+2. Render Dashboard → New → Web Service → подключить репозиторий.
+3. Настройки:
+   - Environment: **Node**
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npm start`
+   - Health Check Path: `/api/health`
+4. Environment Variables (Dashboard → Environment):
+   - `GEMINI_API_KEY` — ключ Google AI Studio (**секрет: только здесь, никогда в Git**)
+   - `LLM_MODEL` — модель Gemini (например, `gemini-3.6-flash`)
+   - `PORT` — не требуется, Render назначает автоматически
+5. Deploy. После сборки сервис отвечает на health check и отдаёт приложение.
+
+Обновление: push в main → автодеплой.
+
+## Архитектура и структура проекта
+
+Один Node-процесс (Hono) отдаёт собранный SPA (Vite + React) и API с одного
+origin; браузер работает с файлом резюме локально — на сервер уходят только
+текстовые данные генерации, ключ LLM живёт исключительно на сервере.
+
+```
+client/    # Vite + React SPA: загрузка PDF/DOCX (pdfjs/mammoth),
+           # экспорт результатов (docx/pdf-lib), UI
+server/    # Hono BFF: статика + /api/generate (LLM), промпты в server/src/prompts
+shared/    # Zod-контракты API, лимиты, общие типы
+```
+
+Ключевые инварианты: stateless (ничего не хранится), anti-fabrication
+(промпт + JSON-схема + валидация + retry), понятные ошибки без stack trace,
+клиентский экспорт PDF/DOCX со встроенными шрифтами кириллицы.
 ## Тесты
 
 ```sh
