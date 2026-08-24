@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 08-23-2026 17:30
-last_updated: "08-24-2026 17:30"
+last_updated: "08-24-2026 18:05"
 project: ai-job-application-assistant
 project_key: NOKEY
 tracking_system: file-system
@@ -49,6 +49,6 @@ development_status:
   epic-2: in-progress
   2-1-понятные-ошибки-невалидного-файла: done
   2-2-валидация-вакансии-с-отказом: done
-  2-3-ошибки-генерации-и-ретрай-одной-кнопкой: in-progress
+  2-3-ошибки-генерации-и-ретрай-одной-кнопкой: done
   2-4-артефакты-интенсива-и-демо-пас: backlog
   epic-2-retrospective: optional

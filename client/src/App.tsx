@@ -8,7 +8,12 @@ import GenerateButton from './components/GenerateButton'
 import StageTracker from './components/StageTracker'
 import DocumentCard from './components/DocumentCard'
 import { postGenerate, postValidateVacancy, type GenerateResult } from './lib/api'
-import { VACANCY_INVALID_MESSAGE, clampVacancy, formIssue } from './lib/formState'
+import {
+  GENERATE_FALLBACK_ERROR,
+  VACANCY_INVALID_MESSAGE,
+  clampVacancy,
+  formIssue,
+} from './lib/formState'
 
 function scrollBehavior(): ScrollBehavior {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
@@ -86,7 +91,7 @@ export default function App() {
         setVacancyError(VACANCY_INVALID_MESSAGE)
       } else {
         // transport error surfaces like Story 1.4, never as a vacancy refusal
-        setGenerateError(validation.message)
+        setGenerateError(validation.message || GENERATE_FALLBACK_ERROR)
       }
       activeRunRef.current = 0
       busyRef.current = false
@@ -101,7 +106,7 @@ export default function App() {
       outcome = {
         kind: 'error',
         code: 'LLM_UNAVAILABLE',
-        message: 'Сервис генерации временно недоступен',
+        message: GENERATE_FALLBACK_ERROR,
       }
     }
     if (superseded()) {
@@ -118,7 +123,9 @@ export default function App() {
     if (outcome.kind === 'ok') {
       setResult(outcome.data)
     } else {
-      setGenerateError(outcome.message) // tracker unmounts: generating=false, result=null
+      // tracker freezes in error phase: stale cards must not hang above it
+      setResult(null)
+      setGenerateError(outcome.message || GENERATE_FALLBACK_ERROR)
     }
     setGenerating(false)
   }
@@ -174,9 +181,14 @@ export default function App() {
             onClick={() => void handleGenerate()}
             error={generateError}
           />
-          {(generating || result) && (
+          {(generating || result || generateError) && (
             <section ref={trackerRef}>
-              <StageTracker phase={generating ? 'generating' : 'success'} elapsedMs={elapsed} />
+              {/* retry = the same handleGenerate: genSeq/busy guards apply,
+                  input (resume/vacancy/tone) is read fresh at click time */}
+              <StageTracker
+                phase={generating ? 'generating' : generateError ? 'error' : 'success'}
+                elapsedMs={elapsed}
+              />
             </section>
           )}
         </section>

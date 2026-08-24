@@ -3,7 +3,7 @@ title: 'Story 2.3: Ошибки генерации и ретрай одной к
 type: 'feature'
 created: '2026-08-24'
 baseline_commit: '1269476511e7d4e83bee977d870c9b00a430f255'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 context:
   - "{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md"
@@ -61,12 +61,12 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `formState.ts` -- StagePhase += 'error'; stageProgress('error', elapsed): прогрессия фиксируется (done как есть), active → null, трекер не крутится -- семантика ошибки
-- [ ] `StageTracker.tsx` -- фаза error: активная стадия ✕ `{colors.error}` (не спиннер), ✓ сохраняются; sr-only объявляет «Произошла ошибка» -- FR-10 visual
-- [ ] `GenerateButton.tsx` -- блок ошибки: сообщение + кнопка «Повторить» (≥44px, secondary outline) одним действием -- FR-10 AC
-- [ ] `App.tsx` -- проброс error-phase в трекер; onRetry = тот же handleGenerate (validate→generate, genSeq/busy guard'ы действуют) -- ретрай одной кнопкой
-- [ ] `theme.css` -- стили ✕ и кнопки повтора по токенам DESIGN.md -- визуал
-- [ ] `check-results.mjs` -- кейсы матрицы: ERROR_SHOWN (заморозка), RETRY_CLICK (сброс), REPEATED_FAILURE (без дублей) + SSR GenerateButton c error → наличие «Повторить» -- повторяемая проверка
+[x] `formState.ts` -- StagePhase += 'error'; stageProgress('error', elapsed): прогрессия фиксируется (done как есть), active → null, трекер не крутится -- семантика ошибки
+[x] `StageTracker.tsx` -- фаза error: активная стадия ✕ `{colors.error}` (не спиннер), ✓ сохраняются; sr-only объявляет «Произошла ошибка» -- FR-10 visual
+[x] `GenerateButton.tsx` -- блок ошибки: сообщение + кнопка «Повторить» (≥44px, secondary outline) одним действием -- FR-10 AC
+[x] `App.tsx` -- проброс error-phase в трекер; onRetry = тот же handleGenerate (validate→generate, genSeq/busy guard'ы действуют) -- ретрай одной кнопкой
+[x] `theme.css` -- стили ✕ и кнопки повтора по токенам DESIGN.md -- визуал
+[x] `check-results.mjs` -- кейсы матрицы: ERROR_SHOWN (заморозка), RETRY_CLICK (сброс), REPEATED_FAILURE (без дублей) + SSR GenerateButton c error → наличие «Повторить» -- повторяемая проверка
 
 **Acceptance Criteria:**
 - Given любая ошибка генерации, when она происходит, then трекер замирает с ✕ (не спиннер, не исчезает до следующего запуска), сообщение с «Попробуйте ещё раз» видно
@@ -92,3 +92,20 @@ context:
 
 **Manual checks (if no CLI):**
 - Скринридер объявляет ошибку; Tab достигает «Повторить»
+
+## Suggested Review Order
+
+- stageProgress('error'): заморозка прогрессии, active → null
+  [`formState.ts:56`](../../client/src/lib/formState.ts#L56)
+
+- StageTracker: ✕ на активной стадии, sr-only «Произошла ошибка»
+  [`StageTracker.tsx:20`](../../client/src/components/StageTracker.tsx#L20)
+
+- GenerateButton: сообщение + «Повторить» одним блоком, role="alert"
+  [`GenerateButton.tsx:23`](../../client/src/components/GenerateButton.tsx#L23)
+
+- App: error-phase проброс, setResult(null) при сбое, ретрай = handleGenerate
+  [`App.tsx:66`](../../client/src/App.tsx#L66)
+
+- Harness: ERROR_SHOWN / RETRY_CLICK / REPEATED_FAILURE
+  [`check-results.mjs:100`](../../scripts/check-results.mjs#L100)

@@ -21,9 +21,12 @@ export default function GenerateButton({ issue, generating, onClick, error }: Pr
         {generating ? 'Генерируем…' : 'Сгенерировать'}
       </button>
       {error && !generating && (
-        <p className="generate-error" role="alert">
-          {error}
-        </p>
+        <div className="generate-error" role="alert">
+          <span className="generate-error-text">{error}</span>
+          <button type="button" className="btn-secondary-outline" onClick={onClick}>
+            Повторить
+          </button>
+        </div>
       )}
       {issue && (
         <p id={hintId} className="generate-hint" aria-live="polite">

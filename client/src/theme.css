@@ -215,9 +215,17 @@ h1 {
 }
 
 .generate-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(2 * var(--space-unit));
   margin: calc(1 * var(--space-unit)) 0 0;
   font-size: 0.875rem;
   color: var(--color-error);
+}
+
+.generate-error-text {
+  color: inherit;
 }
 
 .sr-only {
@@ -264,6 +272,14 @@ h1 {
 
 .stage-active {
   font-weight: 600;
+}
+
+.stage-error {
+  font-weight: 600;
+}
+
+.stage-error .stage-marker {
+  color: var(--color-error);
 }
 
 .stage-spinner {

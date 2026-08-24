@@ -25,6 +25,7 @@ try {
           join(ROOT, 'client/src/lib/formState.ts'),
           join(ROOT, 'client/src/components/StageTracker.tsx'),
           join(ROOT, 'client/src/components/DocumentCard.tsx'),
+          join(ROOT, 'client/src/components/GenerateButton.tsx'),
         ],
         output: { entryFileNames: '[name].mjs' },
       },
@@ -36,6 +37,7 @@ try {
   )
   const StageTracker = (await import(pathToFileUrl(join(OUT_DIR, 'StageTracker.mjs')))).default
   const DocumentCard = (await import(pathToFileUrl(join(OUT_DIR, 'DocumentCard.mjs')))).default
+  const GenerateButton = (await import(pathToFileUrl(join(OUT_DIR, 'GenerateButton.mjs')))).default
   const { createElement: h } = await import('react')
   const { renderToString } = await import('react-dom/server')
 
@@ -64,6 +66,67 @@ try {
       assert.deepEqual(p, { done: 3, active: null }, `SUCCESS: all done at elapsed=${t}`)
     }
     console.log('SUCCESS: все три стадии ✓ при любом elapsed, активных нет')
+  }
+
+  // ERROR_SHOWN: error phase freezes progression at the failure point — done
+  // as-is, nothing active, tracker shows ✕ on the failed stage, no spinner
+  {
+    let p = stageProgress('error', 0)
+    assert.deepEqual(p, { done: 0, active: null }, 'ERROR_SHOWN: t=0 failure, stage 1 frozen')
+    p = stageProgress('error', 700)
+    assert.deepEqual(p, { done: 1, active: null }, 'ERROR_SHOWN: mid-run failure frozen after stage 1')
+    p = stageProgress('error', 600_000)
+    assert.deepEqual(p, { done: 2, active: null }, 'ERROR_SHOWN: late failure frozen on stage 3')
+
+    const render = (ms) => renderToString(h(StageTracker, { phase: 'error', elapsedMs: ms }))
+
+    let html = render(700)
+    assert.equal((html.match(/stage-error/g) ?? []).length, 1, 'ERROR_SHOWN: exactly one failed stage')
+    assert.ok(html.includes('✕'), 'ERROR_SHOWN: ✕ marker on the failed stage')
+    assert.equal((html.match(/✓/g) ?? []).length, 1, 'ERROR_SHOWN: completed stages keep ✓')
+    assert.ok(!html.includes('stage-spinner'), 'ERROR_SHOWN: no spinner in error phase')
+
+    html = render(100)
+    assert.equal((html.match(/✓/g) ?? []).length, 0, 'ERROR_SHOWN: early failure leaves nothing done')
+    assert.equal((html.match(/stage-error/g) ?? []).length, 1)
+
+    html = render(700)
+    assert.ok(html.includes('Произошла ошибка'), 'A11Y: sr-only live region announces the error')
+    assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1, 'A11Y: still one live region')
+    assert.ok(!html.includes('aria-current'), 'ERROR_SHOWN: no aria-current without an active stage')
+    console.log('ERROR_SHOWN: трекер заморожен в точке сбоя — ✕ на активной стадии, ✓ сохранены, без спиннера')
+  }
+
+  // RETRY_CLICK / REPEATED_FAILURE + GenerateButton SSR: «Повторить» next to the
+  // message, single block, hidden while generating; fresh run starts clean
+  {
+    const { GENERATE_FALLBACK_ERROR } = await import(pathToFileUrl(join(OUT_DIR, 'formState.mjs')))
+    const base = { issue: null, generating: false, onClick: () => {} }
+    const renderBtn = (props) => renderToString(h(GenerateButton, props))
+
+    let html = renderBtn({ ...base, error: GENERATE_FALLBACK_ERROR })
+    assert.ok(
+      html.includes(GENERATE_FALLBACK_ERROR),
+      'RETRY_CLICK: exact default copy shown',
+    )
+    assert.ok(html.includes('Повторить'), 'RETRY_CLICK: «Повторить» button next to the message')
+    assert.equal((html.match(/role="alert"/g) ?? []).length, 1, 'REPEATED_FAILURE: single alert block')
+    assert.equal((html.match(/Повторить/g) ?? []).length, 1, 'REPEATED_FAILURE: single retry button')
+
+    html = renderBtn({ ...base, generating: true, error: GENERATE_FALLBACK_ERROR })
+    assert.ok(!html.includes('Повторить'), 'no retry button while a run is active')
+
+    html = renderBtn(base)
+    assert.ok(!html.includes('Повторить') && !html.includes('role="alert"'), 'nothing shown without an error')
+
+    // fresh run after retry: clean generating state, no error residue
+    assert.deepEqual(stageProgress('generating', 0), { done: 0, active: 0 }, 'RETRY_CLICK: new run restarts from stage 1')
+    const fresh = renderToString(h(StageTracker, { phase: 'generating', elapsedMs: 0 }))
+    assert.ok(
+      !fresh.includes('✕') && !fresh.includes('stage-error') && !fresh.includes('Произошла ошибка'),
+      'RETRY_CLICK: previous error state fully gone from the tracker',
+    )
+    console.log('RETRY_CLICK/REPEATED_FAILURE: сообщение+«Повторить» одним блоком; новый прогон стартует чисто')
   }
 
   // PREVIEW pure logic: \r\n split, 8-line window, 600-char cap, whitespace remainder

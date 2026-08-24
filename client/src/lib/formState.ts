@@ -51,10 +51,14 @@ export function toneDescription(tone: Tone): string {
   )
 }
 
+// exact fallback copy from Story 2.3 spec — shown when no code-specific
+// message comes back from api.ts
+export const GENERATE_FALLBACK_ERROR = 'Произошла временная ошибка. Попробуйте ещё раз'
+
 // UX labels over ONE real /api/generate request — not a server pipeline.
 // Stages 1–2 complete at fixed intervals after request start; stage 3 stays
 // active until the fetch resolves/rejects.
-export type StagePhase = 'generating' | 'success'
+export type StagePhase = 'generating' | 'success' | 'error'
 export type StageProgression = { done: number; active: number | null }
 
 const STAGE_DURATIONS_MS = [600, 600]
@@ -68,7 +72,12 @@ export function stageProgress(phase: StagePhase, elapsedMs: number): StageProgre
     if (elapsedMs < acc) break
     done++
   }
-  return { done, active: done < STAGE_DURATIONS_MS.length + 1 ? done : null }
+  // error freezes progression at the failure point: done as-is, nothing spins,
+  // the would-be-active stage (index === done) is rendered as ✕ by the tracker
+  return {
+    done,
+    active: phase === 'error' ? null : done < STAGE_DURATIONS_MS.length + 1 ? done : null,
+  }
 }
 
 export const PREVIEW_LINES = 8
