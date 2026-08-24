@@ -23,6 +23,7 @@ export default function VacancyInput({ value, overLimit, onChange, textareaRef, 
       <textarea
         id="vacancy-text"
         ref={textareaRef}
+        aria-invalid={inlineError ? true : undefined}
         className="vacancy-textarea"
         value={value}
         onChange={(e) => onChange(e.target.value)}

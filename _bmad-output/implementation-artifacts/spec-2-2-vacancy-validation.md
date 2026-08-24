@@ -86,7 +86,7 @@ scripts/check-generate.mjs           # + mock-строки валидации (�
 [x] `server/src/routes/validate.ts` + монтаж -- envelope `{ok,data:{valid}}` / `{ok:false,error:{code,message}}`; JSON-line лог без контента -- эндпоинт
 [x] `client/src/lib/api.ts` -- postValidateVacancy c AbortController на том же бюджете -- клиентская половина
 [x] `App.tsx` -- handleGenerate: после старта окна generating вызвать validate до generate; invalid → стоп конвейера, inline под textarea (точная копия), generating=false; valid → продолжить; трекер остаётся таймерным без изменения семантики -- FR-4 gating
-- [ ] Harness -- mock-строки матрицы: VALID_PASS / INVALID_LOREM / INVALID_SNIPPET / VALIDATE_TIMEOUT / PRESERVE_INPUT (текст в состоянии после отказа) -- повторяемая проверка без сети
+- [x] Harness -- матрица реализована шире исходной формулировки: VALID_PASS / INVALID_LOREM / INVALID_RECIPE / INVALID_SNIPPET / BAD_REQUEST+TRUST_BOUNDARY / NO_CACHE / VALIDATE_TIMEOUT / RATE_LIMITED / PROVIDER_DOWN / INVALID_OUTPUT / CLIENT_* / PRESERVE_INPUT -- повторяемая проверка без сети
 
 **Acceptance Criteria:**
 - Given типичная вакансия, when нажимаю «Сгенерировать», then сначала выполняется `/api/validate-vacancy` внутри окна generating, после pass запускается генерация (трекер остаётся таймерным)
@@ -146,3 +146,16 @@ scripts/check-generate.mjs           # + mock-строки валидации (�
 
 - check-validate: матрица I/O + client-api кейсы
   [`check-validate.mjs:1`](../../scripts/check-validate.mjs#L1)
+
+### Review Findings
+
+- [x] [Review][Decision — решено владельцем 2026-08-24: ОТКАТИТЬ] Non-JSON envelope провайдера переклассифицирован на пути /api/generate — рефакторинг callGemini→geminiJson изменил классификацию не-JSON тела ответа провайдера с `invalid` (repair-retry, LLM_INVALID_OUTPUT) на `provider_error` (без retry, LLM_UNAVAILABLE) [`server/src/llm/gemini.ts`]. Спека 2.2 запрещала менять поведение /api/generate (Never), но новая классификация аргументируемо корректнее (транспортный сбой не должен жечь repair-retry). Требуется решение владельца: откатить или утвердить новое поведение + зафиксировать harness-кейсом
+- [x] [Review][Patch] Gating-логика handleGenerate без автоматического покрытия — порядок validate→generate, стоп на valid:false, superseded-unwind не исполняются ни одним тестом; регрессия ядра FR-4 невидима для suite [`client/src/App.tsx:66`] — расширить check-validate SSR-драйвером App со скриптованным fetch
+- [x] [Review][Patch] Серверный лимит длины vacancyText отсутствует на границе доверия — ValidateVacancyRequestSchema проверяет только nonEmpty; произвольный payload уходит в платный LLM [`shared/src/index.ts`] — добавить .max(LIMITS.vacancyMaxChars)
+- [x] [Review][Patch] Мёртвый catch вокруг postValidateVacancy дублирует сообщение третьей копией — postValidateVacancy всегда resolves [`client/src/App.tsx:74`] — убрать catch, заодно убрать генерационную формулировку из фолбэка
+- [x] [Review][Patch] SCENARIO_TIMEOUT может повесить harness навсегда при регрессии abort — нет общего дедлайна у этой строки [`scripts/check-validate.mjs:397`] — Promise.race с harness-deadline
+- [x] [Review][Patch] Pipeline-leak guard в моке не может зафейлиться — generate-вызов во время validate-сценария отвечает 200{} молча [`scripts/check-validate.mjs:60`] — записывать вызов и ассертить отсутствие
+- [x] [Review][Patch] Пустой error.message из envelope даёт тихий no-op без фидбека [`client/src/lib/api.ts:274`] — фолбэк на дефолтное сообщение при нестроковом/пустом message
+- [x] [Review][Patch] Нет aria-invalid="true" на textarea при показе отказа — дополнение к role="alert"/aria-describedby [`client/src/components/VacancyInput.tsx`]
+- [x] [Review][Patch] Чекбокс Harness-задачи в спеке не отмечен при done-статусе; формулировка матрицы задачи уже расходится с реализованной — отметить и синхронизировать текст со фактическим покрытием
+- [x] [Review][Defer] Дублирование ValidateVacancyResult TS-типа вместо z.infer из shared [`client/src/lib/api.ts`] — deferred, стилистика MVP-уровня

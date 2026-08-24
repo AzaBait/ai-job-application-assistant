@@ -7,7 +7,7 @@ import ToneSelect from './components/ToneSelect'
 import GenerateButton from './components/GenerateButton'
 import StageTracker from './components/StageTracker'
 import DocumentCard from './components/DocumentCard'
-import { postGenerate, postValidateVacancy, type GenerateResult, type ValidateVacancyResult } from './lib/api'
+import { postGenerate, postValidateVacancy, type GenerateResult } from './lib/api'
 import { VACANCY_INVALID_MESSAGE, clampVacancy, formIssue } from './lib/formState'
 
 function scrollBehavior(): ScrollBehavior {
@@ -70,16 +70,8 @@ export default function App() {
     // tracker stays timer-driven (Story 1.5); validation is a client step
     // INSIDE the generating window, its outcome never touches stage labels
     const superseded = () => id !== genSeqRef.current || id !== activeRunRef.current
-    let validation: ValidateVacancyResult
-    try {
-      validation = await postValidateVacancy({ vacancyText: vacancy.text })
-    } catch {
-      validation = {
-        kind: 'error',
-        code: 'LLM_UNAVAILABLE',
-        message: 'Сервис генерации временно недоступен',
-      }
-    }
+    // postValidateVacancy always resolves (transport errors are outcomes)
+    const validation = await postValidateVacancy({ vacancyText: vacancy.text })
     if (superseded()) {
       if (activeRunRef.current === id) {
         activeRunRef.current = 0

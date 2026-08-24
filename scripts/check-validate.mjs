@@ -26,6 +26,7 @@ const MOCK_PORT = await freePort()
 const SERVER_PORT = await freePort()
 
 let llmCalls = 0
+let generateLeaks = 0
 let lastCaptured = null
 
 const REAL_VACANCY = `Должность: Frontend-разработчик
@@ -58,6 +59,7 @@ const mock = createServer((req, res) => {
     }
     if (!isValidateCall(body)) {
       // generate call reached the provider during a validate scenario — pipeline leak
+      generateLeaks++
       reply(200, {})
       return
     }
@@ -175,6 +177,10 @@ try {
     assert.equal(bad.ok, false)
     assert.equal(bad.error.code, 'BAD_REQUEST')
     console.log('BAD_REQUEST: пустое тело отбито Zod-схемой')
+    const oversized = await (await post({ vacancyText: 'x'.repeat(10_001) })).json()
+    assert.equal(oversized.ok, false)
+    assert.equal(oversized.error.code, 'BAD_REQUEST')
+    console.log('TRUST_BOUNDARY: вакансия >10k отбита серверной Zod-схемой до LLM')
     // NO_CACHE: two identical-shape requests each hit the provider
     const a = await (await post({ vacancyText: REAL_VACANCY })).json()
     const b = await (await post({ vacancyText: REAL_VACANCY })).json()
@@ -186,7 +192,11 @@ try {
   // VALIDATE_TIMEOUT: transport error, never VACANCY_INVALID
   {
     const t0 = Date.now()
-    const e = await (await post({ vacancyText: 'SCENARIO_TIMEOUT' })).json()
+    const timeoutRow = Promise.race([
+      post({ vacancyText: 'SCENARIO_TIMEOUT' }).then((r) => r.json()),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('harness deadline: abort regression')), 15_000)),
+    ])
+    const e = await timeoutRow
     assert.equal(e.ok, false)
     assert.equal(e.error.code, 'LLM_TIMEOUT', 'timeout must be LLM_TIMEOUT, not a refusal')
     assert.ok(Date.now() - t0 < 10_000)
@@ -220,6 +230,7 @@ try {
     console.log(`INVALID_OUTPUT: битый вывод модели → ${e.error.code}, не отказ вакансии`)
   }
 
+  assert.equal(generateLeaks, 0, 'PIPELINE_LEAK: /api/generate must not be called during validate scenarios')
   console.log('server validate checks passed')
 } finally {
   await stopServer(server)

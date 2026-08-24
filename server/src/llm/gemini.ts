@@ -89,7 +89,9 @@ async function geminiJson(
   try {
     parsed = JSON.parse(raw)
   } catch {
-    return { kind: 'provider_error', message: 'non-JSON envelope from provider' }
+    // pre-2.2 behavior preserved (Story 2.2 Never: /api/generate untouched):
+    // malformed envelope counts as invalid model output -> eligible for repair-retry
+    return { kind: 'invalid', detail: 'non-JSON envelope from provider' }
   }
   if (parsed.promptFeedback?.blockReason) {
     return { kind: 'provider_error', message: `blocked: ${parsed.promptFeedback.blockReason}` }

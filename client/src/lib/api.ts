@@ -79,10 +79,15 @@ export async function postValidateVacancy(input: ValidateVacancyRequest): Promis
       typeof (parsed as { error?: { code?: unknown; message?: unknown } }).error?.code === 'string'
     ) {
       const error = (parsed as { error: { code: string; message?: unknown } }).error
+      const fallback =
+        error.code === 'LLM_TIMEOUT'
+          ? 'Проверка заняла слишком долго, попробуйте ещё раз'
+          : 'Сервис временно недоступен, попробуйте ещё раз'
       return {
         kind: 'error',
         code: error.code,
-        message: typeof error.message === 'string' ? error.message : '',
+        message:
+          typeof error.message === 'string' && error.message.trim() ? error.message : fallback,
       }
     }
     return { kind: 'error', code: 'LLM_UNAVAILABLE', message: 'Сервис генерации временно недоступен' }

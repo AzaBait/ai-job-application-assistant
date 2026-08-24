@@ -32,7 +32,7 @@ export const GenerateResponseSchema = z.object({
   coverLetter: nonEmpty,
 })
 
-export const ValidateVacancyRequestSchema = z.object({ vacancyText: nonEmpty })
+export const ValidateVacancyRequestSchema = z.object({ vacancyText: nonEmpty.max(LIMITS.vacancyMaxChars) })
 
 export const ValidateVacancyResultSchema = z.object({ valid: z.boolean() })
 
