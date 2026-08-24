@@ -23,6 +23,10 @@ export const ISSUE_HINTS = {
   OVER_LIMIT: 'Сократите текст вакансии',
 } as const
 
+// exact inline copy from Story 2.2 spec — shown under the textarea on VACANCY_INVALID
+export const VACANCY_INVALID_MESSAGE =
+  'Похоже, это не описание вакансии. Вставьте текст вакансии с требованиями — и мы всё сделаем'
+
 export const TONE_OPTIONS: { value: Tone; label: string; description: string }[] = [
   {
     value: 'professional',

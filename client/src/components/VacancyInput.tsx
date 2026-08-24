@@ -7,11 +7,14 @@ type Props = {
   overLimit: boolean
   onChange: (text: string) => void
   textareaRef: RefObject<HTMLTextAreaElement | null>
+  inlineError?: string | null
 }
 
-export default function VacancyInput({ value, overLimit, onChange, textareaRef }: Props) {
+export default function VacancyInput({ value, overLimit, onChange, textareaRef, inlineError }: Props) {
   const counterId = useId()
+  const errorId = useId()
   const count = countChars(value)
+  const describedBy = inlineError ? `${counterId} ${errorId}` : counterId
   return (
     <section aria-label="Вакансия">
       <label htmlFor="vacancy-text" className="field-label">
@@ -23,7 +26,7 @@ export default function VacancyInput({ value, overLimit, onChange, textareaRef }
         className="vacancy-textarea"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        aria-describedby={counterId}
+        aria-describedby={describedBy}
         placeholder={
           'Должность: Frontend-разработчик\nОбязанности: разработка SPA, код-ревью\nТребования: React, TypeScript, опыт от 2 лет'
         }
@@ -31,6 +34,11 @@ export default function VacancyInput({ value, overLimit, onChange, textareaRef }
       <div id={counterId} className={`vacancy-counter${overLimit ? ' vacancy-counter-error' : ''}`}>
         {count.toLocaleString('ru-RU')} / {LIMITS.vacancyMaxChars.toLocaleString('ru-RU')}
       </div>
+      {inlineError && (
+        <p id={errorId} className="generate-error" role="alert">
+          {inlineError}
+        </p>
+      )}
     </section>
   )
 }

@@ -32,6 +32,12 @@ export const GenerateResponseSchema = z.object({
   coverLetter: nonEmpty,
 })
 
+export const ValidateVacancyRequestSchema = z.object({ vacancyText: nonEmpty })
+
+export const ValidateVacancyResultSchema = z.object({ valid: z.boolean() })
+
+export type ValidateVacancyRequest = z.infer<typeof ValidateVacancyRequestSchema>
+
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>
 export type GenerateResponse = z.infer<typeof GenerateResponseSchema>
 
@@ -70,6 +76,8 @@ function toGeminiSchema(schema: z.ZodType): Record<string, unknown> {
 
 export const GENERATE_RESPONSE_JSON_SCHEMA = toGeminiSchema(GenerateResponseSchema)
 
+export const VALIDATE_VACANCY_JSON_SCHEMA = toGeminiSchema(ValidateVacancyResultSchema)
+
 export type ErrorCode =
   | 'BAD_REQUEST'
   | 'CONFIG'
@@ -77,6 +85,7 @@ export type ErrorCode =
   | 'LLM_INVALID_OUTPUT'
   | 'RATE_LIMITED'
   | 'LLM_UNAVAILABLE'
+  | 'VACANCY_INVALID'
 
 export const ErrorCodeSchema = z.enum([
   'BAD_REQUEST',
@@ -85,6 +94,7 @@ export const ErrorCodeSchema = z.enum([
   'LLM_INVALID_OUTPUT',
   'RATE_LIMITED',
   'LLM_UNAVAILABLE',
+  'VACANCY_INVALID',
 ])
 
 export const EnvelopeSchema = z.discriminatedUnion('ok', [

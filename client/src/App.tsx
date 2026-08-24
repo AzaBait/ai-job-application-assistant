@@ -7,8 +7,8 @@ import ToneSelect from './components/ToneSelect'
 import GenerateButton from './components/GenerateButton'
 import StageTracker from './components/StageTracker'
 import DocumentCard from './components/DocumentCard'
-import { postGenerate, type GenerateResult } from './lib/api'
-import { clampVacancy, formIssue } from './lib/formState'
+import { postGenerate, postValidateVacancy, type GenerateResult, type ValidateVacancyResult } from './lib/api'
+import { VACANCY_INVALID_MESSAGE, clampVacancy, formIssue } from './lib/formState'
 
 function scrollBehavior(): ScrollBehavior {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
@@ -21,6 +21,7 @@ export default function App() {
   const [result, setResult] = useState<GenerateResponse | null>(null)
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const [vacancyError, setVacancyError] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const dropzoneZoneRef = useRef<HTMLDivElement>(null)
@@ -52,6 +53,7 @@ export default function App() {
     genSeqRef.current++
     setResult(null)
     setGenerateError(null)
+    setVacancyError(null)
   }
 
   async function handleGenerate() {
@@ -61,8 +63,45 @@ export default function App() {
     activeRunRef.current = id
     setResult(null)
     setGenerateError(null)
+    setVacancyError(null)
     setElapsed(0) // sync with start: tracker never mounts with a stale elapsed
     setGenerating(true)
+
+    // tracker stays timer-driven (Story 1.5); validation is a client step
+    // INSIDE the generating window, its outcome never touches stage labels
+    const superseded = () => id !== genSeqRef.current || id !== activeRunRef.current
+    let validation: ValidateVacancyResult
+    try {
+      validation = await postValidateVacancy({ vacancyText: vacancy.text })
+    } catch {
+      validation = {
+        kind: 'error',
+        code: 'LLM_UNAVAILABLE',
+        message: 'Сервис генерации временно недоступен',
+      }
+    }
+    if (superseded()) {
+      if (activeRunRef.current === id) {
+        activeRunRef.current = 0
+        setGenerating(false)
+      }
+      busyRef.current = false
+      return
+    }
+    if (!(validation.kind === 'ok' && validation.valid)) {
+      if (validation.kind === 'ok') {
+        // VACANCY_INVALID: pipeline stops before generation; input untouched
+        setVacancyError(VACANCY_INVALID_MESSAGE)
+      } else {
+        // transport error surfaces like Story 1.4, never as a vacancy refusal
+        setGenerateError(validation.message)
+      }
+      activeRunRef.current = 0
+      busyRef.current = false
+      setGenerating(false)
+      return
+    }
+
     let outcome: GenerateResult
     try {
       outcome = await postGenerate({ resumeText, vacancyText: vacancy.text, tone })
@@ -73,7 +112,7 @@ export default function App() {
         message: 'Сервис генерации временно недоступен',
       }
     }
-    if (id !== genSeqRef.current || id !== activeRunRef.current) {
+    if (superseded()) {
       // superseded by input change or a newer run; unwind only if no newer run owns the UI
       if (activeRunRef.current === id) {
         activeRunRef.current = 0
@@ -128,6 +167,7 @@ export default function App() {
               invalidate()
             }}
             textareaRef={textareaRef}
+            inlineError={vacancyError}
           />
           <ToneSelect
             value={tone}

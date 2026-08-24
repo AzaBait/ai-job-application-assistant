@@ -4,11 +4,13 @@ import { Hono } from 'hono'
 import type { Server } from 'node:http'
 import { join } from 'node:path'
 import { generateRoute } from './routes/generate.ts'
+import { validateRoute } from './routes/validate.ts'
 
 const app = new Hono()
 
 app.get('/api/health', (c) => c.json({ ok: true, data: { status: 'up' } }))
 app.route('/', generateRoute)
+app.route('/', validateRoute)
 
 const staticRoot = join(import.meta.dirname, '../../client/dist')
 app.use('*', serveStatic({ root: staticRoot }))
