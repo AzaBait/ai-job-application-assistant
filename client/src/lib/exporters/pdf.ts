@@ -1,28 +1,23 @@
 import fontkit from '@pdf-lib/fontkit'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import type { DocBlock } from '../formState'
+import { classifyBlocks, STYLE } from '../template'
 import fontUrl from '../../assets/fonts/NotoSans-Regular.ttf?url'
+import boldFontUrl from '../../assets/fonts/NotoSans-Bold.ttf?url'
 
 // A4 portrait
 const PAGE_WIDTH = 595.28
 const PAGE_HEIGHT = 841.89
 const MARGIN = 56
 
-type Style = { size: number; lineHeight: number; spaceBefore: number; indent: number }
-
-const STYLES: Record<DocBlock['type'], Style> = {
-  h1: { size: 16, lineHeight: 22, spaceBefore: 14, indent: 0 },
-  h2: { size: 13, lineHeight: 19, spaceBefore: 12, indent: 0 },
-  p: { size: 11, lineHeight: 16, spaceBefore: 6, indent: 0 },
-  li: { size: 11, lineHeight: 16, spaceBefore: 3, indent: 18 },
-  hr: { size: 11, lineHeight: 16, spaceBefore: 10, indent: 0 },
-}
-
 export class PdfExportError extends Error {}
 
-// Lazy one-time fetch of the embedded Noto Sans (OFL) asset.
+type PDFFont = Awaited<ReturnType<PDFDocument['embedFont']>>
+
+// Lazy one-time fetch of the embedded Noto Sans (OFL) assets.
 // undefined = not fetched; a failed fetch stays undefined so the next click retries.
 let fontCache: ArrayBuffer | undefined
+let boldCache: ArrayBuffer | undefined
 export async function loadNotoSans(): Promise<ArrayBuffer | null> {
   if (fontCache === undefined) {
     try {
@@ -34,6 +29,18 @@ export async function loadNotoSans(): Promise<ArrayBuffer | null> {
     }
   }
   return fontCache ?? null
+}
+async function loadNotoSansBold(): Promise<ArrayBuffer | null> {
+  if (boldCache === undefined) {
+    try {
+      const res = await fetch(boldFontUrl)
+      if (!res.ok) throw new Error(`font asset HTTP ${res.status}`)
+      boldCache = await res.arrayBuffer()
+    } catch {
+      boldCache = undefined
+    }
+  }
+  return boldCache ?? null
 }
 
 // Standard-font fallback cannot encode anything beyond WinAnsi (bullet U+2022
@@ -74,50 +81,113 @@ function wrap(text: string, width: number, measure: (s: string) => number): stri
   return lines.length > 0 ? lines : ['']
 }
 
-export async function buildPdf(blocks: DocBlock[], fontBytes: ArrayBuffer | null): Promise<Uint8Array> {
+function hexToRgb(hex: string) {
+  return rgb(parseInt(hex.slice(0, 2), 16) / 255, parseInt(hex.slice(2, 4), 16) / 255, parseInt(hex.slice(4, 6), 16) / 255)
+}
+
+interface Fonts {
+  regular: PDFFont
+  bold: PDFFont | null
+  embedded: boolean // false => Helvetica fallback, WinAnsi-only
+}
+
+function itemStyle(item: RenderItem) {
+  return STYLE[item.role]
+}
+import type { RenderItem } from '../template'
+
+function drawItem(page: ReturnType<PDFDocument['addPage']>, item: RenderItem, y: number, fonts: Fonts): number {
+  const style = itemStyle(item)
+  const font = (style.bold && fonts.bold) || fonts.regular
+  const indent = 'indent' in style ? ((style as { indent?: number }).indent ?? 0) : 0
+  const x = MARGIN + indent
+  const prefix = item.role === 'bullet' ? '• ' : ''
+  if (!fonts.embedded) assertWinAnsi(prefix + (item.text ?? ''))
+  const columnWidth = PAGE_WIDTH - 2 * MARGIN - indent
+  const size = style.size
+  const lineHeight = size * 1.45
+  const color = hexToRgb((style.color as string) ?? '212529')
+  const lines = wrap(prefix + (item.text ?? ''), columnWidth, (s) => font.widthOfTextAtSize(s, size))
+  for (const line of lines) {
+    page.drawText(line, { x, y: y - size, size, font, color })
+    y -= lineHeight
+  }
+  return y - style.spaceAfter
+}
+
+function newPage(doc: PDFDocument) {
+  const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+  return { page, y: PAGE_HEIGHT - MARGIN }
+}
+
+export async function buildPdf(blocks: DocBlock[], kind: 'resume' | 'letter', fontBytes: ArrayBuffer | null): Promise<Uint8Array> {
+  const model = classifyBlocks(blocks, kind)
+
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
-  const font = fontBytes
-    ? await doc.embedFont(fontBytes, { subset: true })
+  const regularBytes = fontBytes ?? (await loadNotoSans())
+  const boldBytes = regularBytes ? await loadNotoSansBold() : null
+  const regular = regularBytes
+    ? await doc.embedFont(regularBytes, { subset: true })
     : await doc.embedFont(StandardFonts.Helvetica)
+  let bold: PDFFont | null = null
+  if (regularBytes && boldBytes) bold = await doc.embedFont(boldBytes, { subset: true })
+  const fonts: Fonts = { regular, bold, embedded: Boolean(regularBytes) }
 
-  let page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-  let y = PAGE_HEIGHT - MARGIN
+  let { page, y } = newPage(doc)
 
-  const newPage = () => {
-    page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-    y = PAGE_HEIGHT - MARGIN
-  }
-
-  for (const block of blocks) {
-    const style = STYLES[block.type]
+  for (let i = 0; i < model.items.length; i++) {
+    const item = model.items[i]
+    const style = itemStyle(item)
     y -= style.spaceBefore
-    if (y - style.lineHeight < MARGIN) newPage()
-    if (block.type === 'hr') {
+
+    // orphan-heading avoidance: heading needs itself + one line of the next
+    // block on the same page
+    const next = model.items[i + 1]
+    if ((item.role === 'section' || item.role === 'subheading') && next) {
+      const nextStyle = itemStyle(next)
+      const needed = sizeLine(style) + nextStyle.spaceBefore + sizeLine(nextStyle)
+      if (y - needed < MARGIN) {
+        ;({ page, y } = newPage(doc))
+        y -= style.spaceBefore
+      }
+    }
+
+    if (item.role === 'rule') {
+      if (y - style.size < MARGIN) {
+        ;({ page, y } = newPage(doc))
+        y -= style.spaceBefore
+      }
       page.drawLine({
         start: { x: MARGIN, y },
         end: { x: PAGE_WIDTH - MARGIN, y },
         thickness: 0.5,
-        color: rgb(0.87, 0.89, 0.9),
+        color: hexToRgb(style.color as string),
       })
-      y -= style.lineHeight
+      y -= sizeLine(style) * 0.6 + style.spaceAfter
       continue
     }
-    const x = MARGIN + style.indent
-    const columnWidth = PAGE_WIDTH - 2 * MARGIN - style.indent
-    const prefix = block.type === 'li' ? '• ' : ''
-    // hr already continued above; validate exactly what will be drawn,
-    // bullet prefix included
-    if (!fontBytes) assertWinAnsi(prefix + block.text)
-    const lines = wrap(prefix + block.text, columnWidth, (s) => font.widthOfTextAtSize(s, style.size))
-    for (const line of lines) {
-      if (y < MARGIN) newPage()
-      page.drawText(line, { x, y: y - style.size, size: style.size, font })
-      y -= style.lineHeight
+
+    if (y - sizeLine(style) < MARGIN) {
+      ;({ page, y } = newPage(doc))
+    }
+    y = drawItem(page, item, y, fonts)
+
+    if (item.role === 'section') {
+      page.drawLine({
+        start: { x: MARGIN, y: y + 3 },
+        end: { x: PAGE_WIDTH - MARGIN, y: y + 3 },
+        thickness: 0.75,
+        color: hexToRgb(STYLE.section.color as string),
+      })
     }
   }
 
   // useObjectStreams:false keeps dicts uncompressed — lets the offline
   // harness assert on embedded-font markers; size delta is negligible here.
   return doc.save({ useObjectStreams: false })
+}
+
+function sizeLine(style: { size: number }): number {
+  return style.size * 1.45
 }

@@ -3,7 +3,7 @@ title: 'Story 1.7: Профессиональное оформление экс�
 type: 'feature'
 created: '2026-08-23'
 baseline_commit: '7f5f44563c7cf6d620176dfe314a2b230fdbbdd0'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 context:
   - "{project-root}/_bmad-output/implementation-artifacts/epic-1-context.md"
@@ -109,3 +109,29 @@ Letter-template добавляет только заголовок докуме�
 
 **Manual checks (if no CLI):**
 - Открыть PDF/DOCX: иерархия соответствует реальной структуре, ничего не потеряно/не задублировано
+
+## Suggested Review Order
+
+**Классификация (консервативная семантика)**
+
+- classifyBlocks: имя/позиция-по-метке/контакты/секции; uncertain → paragraph
+  [`template.ts:78`](../../client/src/lib/template.ts#L78)
+
+- STYLE таблица — единый источник размеров/отступов/цветов
+  [`template.ts:24`](../../client/src/lib/template.ts#L24)
+
+**Рендеры**
+
+- PDF: TemplateModel, Bold-шрифт, orphan-heading avoidance, section rules
+  [`pdf.ts:150`](../../client/src/lib/exporters/pdf.ts#L150)
+
+- DOCX: те же роли через HeadingLevel/bold/color
+  [`docx.ts:22`](../../client/src/lib/exporters/docx.ts#L22)
+
+**Периферия**
+
+- Парсер: многоуровневые ### теперь h2 (фикс pre-existing бага)
+  [`formState.ts:60`](../../client/src/lib/formState.ts#L60)
+
+- Harness: реальные фикстуры E2E, no-drift мультимножества, dup-title guard
+  [`check-export.mjs:280`](../../scripts/check-export.mjs#L280)

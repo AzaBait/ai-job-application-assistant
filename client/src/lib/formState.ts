@@ -107,10 +107,10 @@ export function parseDocumentStructure(text: string): DocBlock[] {
     const last = blocks[blocks.length - 1]
     if (/^-{3,}$/.test(line)) {
       blocks.push({ type: 'hr' })
-    } else if (line.startsWith('## ')) {
-      blocks.push({ type: 'h2', text: line.slice(3).trim() })
-    } else if (line.startsWith('# ')) {
-      blocks.push({ type: 'h1', text: line.slice(2).trim() })
+    } else if (/^#{2,}\s+/.test(line)) {
+      blocks.push({ type: 'h2', text: line.replace(/^#{2,}\s+/, '') })
+    } else if (/^#\s+/.test(line)) {
+      blocks.push({ type: 'h1', text: line.replace(/^#\s+/, '') })
     } else if (/^[-•]\s+/.test(line)) {
       blocks.push({ type: 'li', text: line.replace(/^[-•]\s+/, '') })
     } else if (canMerge && last?.type === 'p') {

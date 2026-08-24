@@ -11,12 +11,13 @@ export async function downloadDocument(
 ): Promise<void> {
   const blocks = parseDocumentStructure(text)
   if (blocks.length === 0) throw new Error('Документ пуст — нечего скачивать')
+  const docKind: 'resume' | 'letter' = fileBase === 'cover-letter' ? 'letter' : 'resume'
   const blob =
     kind === 'pdf'
-      ? new Blob([await buildPdf(blocks, await loadNotoSans())] as BlobPart[], {
+      ? new Blob([await buildPdf(blocks, docKind, await loadNotoSans())] as BlobPart[], {
           type: 'application/pdf',
         })
-      : await buildDocx(blocks)
+      : await buildDocx(blocks, docKind)
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
