@@ -29,14 +29,14 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 08-23-2026 17:30
-last_updated: "08-24-2026 14:55"
+last_updated: "08-24-2026 15:30"
 project: ai-job-application-assistant
 project_key: NOKEY
 tracking_system: file-system
 story_location: 
   /home/aza/ai-job-application-assistant/_bmad-output/implementation-artifacts
 development_status:
-  epic-1: in-progress
+  epic-1: done
   1-1-деплоируемый-скелет-продукта: done
   1-2-загрузка-резюме-и-извлечение-текста: done
   1-3-текст-вакансии-и-выбор-тональности: done
@@ -46,8 +46,8 @@ development_status:
   1-7-профессиональное-оформление-экспортируемых-документов: done
   epic-1-retrospective: optional
 
-  epic-2: backlog
-  2-1-понятные-ошибки-невалидного-файла: backlog
+  epic-2: in-progress
+  2-1-понятные-ошибки-невалидного-файла: in-progress
   2-2-валидация-вакансии-с-отказом: backlog
   2-3-ошибки-генерации-и-ретрай-одной-кнопкой: backlog
   2-4-артефакты-интенсива-и-демо-пас: backlog
