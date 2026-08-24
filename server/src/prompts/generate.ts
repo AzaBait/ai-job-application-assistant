@@ -15,7 +15,7 @@ export const GENERATE_SYSTEM_PROMPT = `Ты — ассистент по откл
 
 Тональность обоих документов задаётся параметром «тональность» из запроса.`
 
-const TONE_INSTRUCTIONS: Record<Tone, string> = {
+export const TONE_INSTRUCTIONS: Record<Tone, string> = {
   professional: 'Тональность: профессиональная — деловой стиль, формальные формулировки.',
   friendly: 'Тональность: дружелюбная — тёплый тон, живой и простой язык.',
   confident: 'Тональность: уверенная — напористый тон, акцент на результатах.',

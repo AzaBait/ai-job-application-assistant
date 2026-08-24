@@ -54,3 +54,8 @@ npm test
 
 Полный офлайн-набор: smoke, парсеры резюме, логика формы, контракт generate
 (через mock LLM), стадии процесса, экспорт PDF/DOCX.
+
+## Промпты
+
+LLM-промпты живут в `server/src/prompts/generate.ts` (источник истины).
+`PROMPTS.md` генерируется из них командой `npm run prompts`.
