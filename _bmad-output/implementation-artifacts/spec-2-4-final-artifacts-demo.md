@@ -102,3 +102,26 @@ DEMO.md        # НОВЫЙ: сценарий презентации + чекл�
 
 **Manual checks (if no CLI):**
 - Пройти DEMO.md от начала до конца на живом приложении с реальным ключом
+
+## Suggested Review Order
+
+- README: Render-инструкция + Env Variables через process.env
+  [`README.md:50`](../../README.md#L50)
+
+- DEMO.md: сценарий презентации SM-1..SM-4 + прод-верификация
+  [`DEMO.md:19`](../../DEMO.md#L19)
+
+- Стартовый фикс: server/.env опционален в проде (--env-file-if-exists)
+  [`package.json:17`](../../package.json#L17)
+
+- PROMPTS.md регенерирован и актуален
+  [`PROMPTS.md:1`](../../PROMPTS.md#L1)
+
+## Production Verification Log (owner-performed)
+
+- Deploy: Render Web Service из GitHub, коммит 6b9d0a9, free tier
+- Прод-URL отвечает; UI работает
+- Happy path на реальных резюме: генерация резюме и письма ✓, скачивание PDF/DOCX ✓
+- Оформление Story 1.7 визуально подтверждено владельцем
+- Битый вход (.txt → .pdf): точная копия «Этот формат не поддерживается…» ✓
+- Текст-не-вакансия: корректный отказ ✓
