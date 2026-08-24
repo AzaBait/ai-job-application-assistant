@@ -20,12 +20,16 @@ export async function parseResume(file: File): Promise<ParseResult> {
     return { ok: false, code: 'FILE_TOO_LARGE' }
   }
   const head = new Uint8Array(await file.slice(0, 4).arrayBuffer())
+  // scanned PDF / image-only doc extracts to whitespace — product-indistinguishable
+  // from unreadable, so same registry code instead of silent success
   if (hasMagic(head, PDF_MAGIC)) {
     const text = await extractPdfText(new Uint8Array(await file.arrayBuffer()))
+    if (!text.trim()) return { ok: false, code: 'PARSE_FAILED' }
     return { ok: true, value: { kind: 'pdf', fileName: file.name, sizeBytes: file.size, text } }
   }
   if (hasMagic(head, DOCX_MAGIC)) {
     const text = await extractDocxText(await file.arrayBuffer())
+    if (!text.trim()) return { ok: false, code: 'PARSE_FAILED' }
     return { ok: true, value: { kind: 'docx', fileName: file.name, sizeBytes: file.size, text } }
   }
   return { ok: false, code: 'UNSUPPORTED_FORMAT' }

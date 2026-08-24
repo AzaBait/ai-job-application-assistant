@@ -4,9 +4,9 @@ import type { ParseOk } from '../lib/parsers'
 import { parseResume } from '../lib/parsers'
 
 const MESSAGES = {
-  FILE_TOO_LARGE: 'Файл больше 5 МБ',
-  UNSUPPORTED_FORMAT: 'Поддерживаются только PDF и DOCX',
-  PARSE_FAILED: 'Не удалось прочитать файл',
+  FILE_TOO_LARGE: 'Файл больше 5 МБ. Загрузите резюме в PDF или DOCX (до 5 МБ)',
+  UNSUPPORTED_FORMAT: 'Этот формат не поддерживается. Загрузите резюме в PDF или DOCX (до 5 МБ)',
+  PARSE_FAILED: 'Не удалось прочитать файл. Похоже, он повреждён — попробуйте другой PDF или DOCX',
 } satisfies Record<ParseRejectionCode, string>
 
 function formatSize(bytes: number): string {
@@ -114,6 +114,7 @@ export default function Dropzone({ onAccepted, onCleared }: Props) {
             type="button"
             className={`dropzone${dragover ? ' dropzone-dragover' : ''}`}
             disabled={parsing}
+            aria-describedby={error ? 'dropzone-error' : undefined}
             onClick={() => inputRef.current?.click()}
             onDragOver={(e) => {
               e.preventDefault()
@@ -137,7 +138,11 @@ export default function Dropzone({ onAccepted, onCleared }: Props) {
       <p aria-live="polite" className="sr-only">
         {announce}
       </p>
-      {error && <p className="dropzone-error">{error}</p>}
+      {error && (
+        <p id="dropzone-error" role="alert" className="dropzone-error">
+          {error}
+        </p>
+      )}
     </section>
   )
 }

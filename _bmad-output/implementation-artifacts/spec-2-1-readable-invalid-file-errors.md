@@ -73,10 +73,10 @@ scripts/check-parsers.mjs            # + EMPTY_TEXT кейс
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `client/src/lib/parsers/index.ts` -- после успешного извлечения `!text.trim()` → `{ ok:false, code:'PARSE_FAILED' }` -- закрывает дыру сканов из 1.2
-- [ ] `client/src/components/Dropzone.tsx` -- MESSAGES заменены на полные AC-копии трёх кодов; error-блок получает `id`, `role="alert"`, а кнопка dropzone — `aria-describedby` на активную ошибку -- FR-2, UX-DR8
-- [ ] Регрессия ввода: ручная трассировка + существующие suite подтверждают, что `fail()` не затрагивает состояние App (vacancy/tone) -- PRESERVE_INPUT
-- [ ] `scripts/check-parsers.mjs` -- кейс EMPTY_TEXT (валидный PDF-фикстура → пустая строка) ожидает `PARSE_FAILED` -- матрица
+[x] `client/src/lib/parsers/index.ts` -- после успешного извлечения `!text.trim()` → `{ ok:false, code:'PARSE_FAILED' }` -- закрывает дыру сканов из 1.2
+[x] `client/src/components/Dropzone.tsx` -- MESSAGES заменены на полные AC-копии трёх кодов; error-блок получает `id`, `role="alert"`, а кнопка dropzone — `aria-describedby` на активную ошибку -- FR-2, UX-DR8
+[x] Регрессия ввода: ручная трассировка + существующие suite подтверждают, что `fail()` не затрагивает состояние App (vacancy/tone) -- PRESERVE_INPUT
+[x] `scripts/check-parsers.mjs` -- кейс EMPTY_TEXT (валидный PDF-фикстура → пустая строка) ожидает `PARSE_FAILED` -- матрица
 - [ ] Полный `npm test` -- регрессия happy path Epic 1
 
 **Acceptance Criteria:**
@@ -105,3 +105,17 @@ scripts/check-parsers.mjs            # + EMPTY_TEXT кейс
 
 **Manual checks (if no CLI):**
 - Скринридер: ошибка объявляется при появлении (role=alert)
+
+## Suggested Review Order
+
+- Пустое извлечение → PARSE_FAILED (обе ветки парсера)
+  [`index.ts:25`](../../client/src/lib/parsers/index.ts#L25)
+
+- Полные AC-копии сообщений реестра
+  [`Dropzone.tsx:7`](../../client/src/components/Dropzone.tsx#L7)
+
+- aria-describedby + role="alert" на ошибке
+  [`Dropzone.tsx:117`](../../client/src/components/Dropzone.tsx#L117)
+
+- EMPTY_TEXT harness-кейс (скан-фикстура)
+  [`check-parsers.mjs:201`](../../scripts/check-parsers.mjs#L201)

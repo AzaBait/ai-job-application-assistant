@@ -142,6 +142,8 @@ async function bundleParsers() {
 const workDir = mkdtempSync(join(tmpdir(), 'aja-parsers-'))
 try {
   writeFileSync(join(workDir, 'resume.pdf'), makePdf('Hello PDF Resume'))
+  // valid PDF whose content stream extracts no text (scan without text layer)
+  writeFileSync(join(workDir, 'empty.pdf'), makePdf(''))
   writeFileSync(join(workDir, 'resume.docx'), makeDocx('Hello DOCX Resume'))
   writeFileSync(join(workDir, 'resume.txt'), Buffer.from('just text, not a resume format'))
   // %PDF magic but garbage body — passes magic-byte gate, fails in pdf.js
@@ -194,6 +196,13 @@ try {
     const r = await parseResume(new File([big], 'big.pdf'))
     assert(!r.ok && r.code === 'FILE_TOO_LARGE', 'TOO_LARGE: oversize must be rejected before parsing')
     console.log('TOO_LARGE: rejected with', r.code)
+  }
+
+  // EMPTY_TEXT (valid PDF, no text layer — must not be a silent success)
+  {
+    const r = await parseResume(file('empty.pdf'))
+    assert(!r.ok && r.code === 'PARSE_FAILED', 'EMPTY_TEXT: scan-like pdf with no text must be PARSE_FAILED')
+    console.log('EMPTY_TEXT: empty extraction rejected with', r.code)
   }
 
   // PARSE_FAILED (%PDF magic passes, parser throws on garbage body)
