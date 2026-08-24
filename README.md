@@ -58,10 +58,11 @@ npm run dev
    - Build Command: `npm install && npm run build`
    - Start Command: `npm start`
    - Health Check Path: `/api/health`
-4. Environment Variables (Dashboard → Environment):
+4. Environment Variables (Dashboard → Environment) — сервер читает их напрямую
+   через `process.env`, файл `.env` в проде не нужен:
    - `GEMINI_API_KEY` — ключ Google AI Studio (**секрет: только здесь, никогда в Git**)
    - `LLM_MODEL` — модель Gemini (например, `gemini-3.6-flash`)
-   - `PORT` — не требуется, Render назначает автоматически
+   - `PORT` — назначается Render автоматически
 5. Deploy. После сборки сервис отвечает на health check и отдаёт приложение.
 
 Обновление: push в main → автодеплой.
